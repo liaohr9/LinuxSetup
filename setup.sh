@@ -1,6 +1,8 @@
 #!/bin/bash
 
-base_dir="/home/scc/cuixj/workspace2"
+base_dir="/mnt/afs/liaohaoran"
+
+echo -e "\033[32m[√] 加载 LinuxSetup/setup.sh 脚本\033[0m"
 
 # ======================== conda =========================
 
@@ -38,7 +40,7 @@ function rt() {
 # ======================== yazi =========================
 function y() {
 	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
-	$base_dir/app/yazi/yazi "$@" --cwd-file="$tmp"
+	$base_dir/LinuxSetup/app/yazi/yazi "$@" --cwd-file="$tmp"
 	IFS= read -r -d '' cwd < "$tmp"
 	[ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && builtin cd -- "$cwd"
 	rm -f -- "$tmp"
@@ -158,7 +160,7 @@ function g() {
 
 # ======================= lazygit ========================
 function lg(){
- $base_dir/app/lazygit
+ $base_dir/LinuxSetup/app/lazygit
 }
 
 # ======================== hugging-face ========================
