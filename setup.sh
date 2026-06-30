@@ -1,8 +1,30 @@
 #!/bin/bash
 
-base_dir="/mnt/afs/liaohaoran"
+if [[ -n "${BASH_SOURCE[0]:-}" ]]; then
+    setup_source="${BASH_SOURCE[0]}"
+elif [[ -n "${ZSH_VERSION:-}" ]]; then
+    eval 'setup_source="${(%):-%x}"'
+else
+    setup_source="$0"
+fi
 
-echo -e "\033[32m[√] 加载 LinuxSetup/setup.sh 脚本\033[0m"
+setup_source_dir="$(cd "$(dirname "$setup_source")" && pwd)"
+if [[ -d "$setup_source_dir/app" ]]; then
+    linux_setup_dir="$setup_source_dir"
+elif [[ -d "$setup_source_dir/LinuxSetup/app" ]]; then
+    linux_setup_dir="$setup_source_dir/LinuxSetup"
+else
+    linux_setup_dir="$setup_source_dir"
+fi
+
+base_dir="$(dirname "$linux_setup_dir")"
+if [[ "$(basename "$base_dir")" == "code" ]]; then
+    base_dir="$(dirname "$base_dir")"
+fi
+
+# This file can be sourced from any LinuxSetup location.
+
+# echo -e "\033[32m[√] 加载 LinuxSetup/setup.sh 脚本\033[0m"
 
 # ======================== conda =========================
 
@@ -10,41 +32,21 @@ export PATH=~/anaconda3/bin:$PATH
 
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
-function ci() {
-    condaon
-}
+
 # <<< conda initialize <<<
 
 # RoboTwin
-function rt() {
-    echo -e "\033[32m[√] conda 初始化中...\033[0m"
-    ci 
-    echo -e "\033[32m[√] conda 初始化成功\033[0m"
-    echo -e "\033[32m[√] 激活 RoboTwin 环境...\033[0m"
-    conda activate RoboTwin
-    echo -e "\033[32m[√] RoboTwin 环境激活成功\033[0m"
-
-    # 保证which python 指向RoboTwin环境的python,否则conda deactivate, 再次激活环境
-    if [[ "$(which python)" != *"RoboTwin"* ]]; then
-        echo -e "\033[33m[!] 检测到 Python 路径异常，正在尝试修复...\033[0m"
-        conda deactivate
-        conda activate RoboTwin
-        if [[ "$(which python)" == *"RoboTwin"* ]]; then
-            echo -e "\033[32m[√] Python 路径修复成功\033[0m"
-        else
-            echo -e "\033[31m[×] Python 路径修复失败，请手动检查\033[0m"
-        fi
-    fi
-}
 
 # ======================== yazi =========================
+if [[ "${LINUXSETUP_ENABLE_YAZI:-1}" == "1" ]]; then
 function y() {
 	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
-	$base_dir/LinuxSetup/app/yazi/yazi "$@" --cwd-file="$tmp"
+	"$linux_setup_dir/app/yazi/yazi" "$@" --cwd-file="$tmp"
 	IFS= read -r -d '' cwd < "$tmp"
 	[ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && builtin cd -- "$cwd"
 	rm -f -- "$tmp"
 }
+fi
 
 # ================= tmux =================
 # 通用 tmux 函数，接收路径参数
@@ -54,22 +56,22 @@ function tmux_base() {
     
     if [[ "$pane_count" == "1" ]]; then
         tmux new-session \; \
-            send-keys "source $base_dir/setup.sh" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter
+            send-keys "source \"$linux_setup_dir/setup.sh\"" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter
     elif [[ "$pane_count" == "2" ]]; then
         tmux new-session \; \
             split-window -h \; \
-            select-pane -t 0 \; send-keys "source $base_dir/setup.sh" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
-            select-pane -t 1 \; send-keys "source $base_dir/setup.sh" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter
+            select-pane -t 0 \; send-keys "source \"$linux_setup_dir/setup.sh\"" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
+            select-pane -t 1 \; send-keys "source \"$linux_setup_dir/setup.sh\"" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter
     elif [[ "$pane_count" == "4" ]]; then
         tmux new-session \; \
             split-window -h \; \
             split-window -v \; \
             select-pane -t 0 \; \
             split-window -v \; \
-            select-pane -t 0 \; send-keys "source $base_dir/setup.sh" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
-            select-pane -t 1 \; send-keys "source $base_dir/setup.sh" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
-            select-pane -t 2 \; send-keys "source $base_dir/setup.sh" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
-            select-pane -t 3 \; send-keys "source $base_dir/setup.sh" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter
+            select-pane -t 0 \; send-keys "source \"$linux_setup_dir/setup.sh\"" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
+            select-pane -t 1 \; send-keys "source \"$linux_setup_dir/setup.sh\"" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
+            select-pane -t 2 \; send-keys "source \"$linux_setup_dir/setup.sh\"" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
+            select-pane -t 3 \; send-keys "source \"$linux_setup_dir/setup.sh\"" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter
     elif [[ "$pane_count" == "8" ]]; then
         tmux new-session \; \
             split-window -h \; \
@@ -84,14 +86,14 @@ function tmux_base() {
             split-window -v \; \
             select-pane -t 6 \; \
             split-window -v \; \
-            select-pane -t 0 \; send-keys "source $base_dir/setup.sh" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
-            select-pane -t 1 \; send-keys "source $base_dir/setup.sh" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
-            select-pane -t 2 \; send-keys "source $base_dir/setup.sh" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
-            select-pane -t 3 \; send-keys "source $base_dir/setup.sh" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
-            select-pane -t 4 \; send-keys "source $base_dir/setup.sh" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
-            select-pane -t 5 \; send-keys "source $base_dir/setup.sh" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
-            select-pane -t 6 \; send-keys "source $base_dir/setup.sh" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
-            select-pane -t 7 \; send-keys "source $base_dir/setup.sh" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter
+            select-pane -t 0 \; send-keys "source \"$linux_setup_dir/setup.sh\"" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
+            select-pane -t 1 \; send-keys "source \"$linux_setup_dir/setup.sh\"" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
+            select-pane -t 2 \; send-keys "source \"$linux_setup_dir/setup.sh\"" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
+            select-pane -t 3 \; send-keys "source \"$linux_setup_dir/setup.sh\"" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
+            select-pane -t 4 \; send-keys "source \"$linux_setup_dir/setup.sh\"" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
+            select-pane -t 5 \; send-keys "source \"$linux_setup_dir/setup.sh\"" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
+            select-pane -t 6 \; send-keys "source \"$linux_setup_dir/setup.sh\"" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter \; \
+            select-pane -t 7 \; send-keys "source \"$linux_setup_dir/setup.sh\"" Enter \; send-keys "cd \"$target_path\"" Enter \; send-keys "rt" Enter
     else
         echo "错误：仅支持 1、2、4 或 8 个面板"
         return 1
@@ -159,38 +161,11 @@ function g() {
 }
 
 # ======================= lazygit ========================
+if [[ "${LINUXSETUP_ENABLE_LG:-1}" == "1" ]]; then
 function lg(){
- $base_dir/LinuxSetup/app/lazygit
+ "$linux_setup_dir/app/lazygit" "$@"
 }
+fi
 
 # ======================== hugging-face ========================
 export HF_ENDPOINT=https://hf-mirror.com
-
-
-# 从远程主机获取文件
-function getfrom() {
-    local sshname="$1"
-    local remote_path="$2"
-    local local_dest="${3:-/home/liaohaoran/receive_files/}"
-
-    if [[ -z "$sshname" ]] || [[ -z "$remote_path" ]]; then
-        echo "用法: getfrom <主机名> <远程路径> [本地目标路径]"
-        return 1
-    fi
-    
-    # 如果sshname为dex:
-    if [[ "$sshname" == "dex" ]]; then
-        rsync -avP --progress "$sshname:$remote_path" "$local_dest"
-    elif [[ "$sshname" == "a" ]]; then
-        rsync -avP --progress "$sshname:$remote_path" "$local_dest"
-    elif [[ "$sshname" == "cluster" || "$sshname" == "230" ]]; then
-        rsync -avP --progress "$sshname:$remote_path" "$local_dest"
-    elif [[ "$sshname" == "ps" ]]; then
-        rsync -avP --progress "$sshname:$remote_path" "$local_dest"
-    elif [[ "$sshname" == "zc"* ]]; then
-        rsync -avP --progress "$sshname:$remote_path" "$local_dest"
-    else
-        echo "错误: 未知的 SSH 目标 '$sshname'"
-        return 1
-    fi
-}
